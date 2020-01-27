@@ -105,8 +105,8 @@ for pred, y in zip(pos_prob, Y_test):
         else:
             break
 
-true_pos_rate = [tp / 3 for tp in true_pos]
-false_pos_rate = [fp / 4 for fp in false_pos]
+true_pos_rate = [tp / 4 for tp in true_pos]
+false_pos_rate = [fp / 6 for fp in false_pos]
 
 import matplotlib.pyplot as plt
 

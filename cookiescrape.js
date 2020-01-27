@@ -6,7 +6,7 @@ async function cookiescrape(url) {
     const page = await browser.newPage();
     await page.goto(url);
     //
-    const [el] = await page.$x("/html/body/div[2]/div[1]/div/div/div");
+    const [el] = await page.$x("//*[@id=\"cn-notice-text\"]");
     // console.log(el)
     const txt = await el.getProperty('textContent');
     // console.log(p)
@@ -17,7 +17,7 @@ async function cookiescrape(url) {
     // console.log(cookietxt)
 
     //
-    const [el2] = await page.$x("//*[@id=\"content-main\"]/div/div/div[1]/p[2]");
+    const [el2] = await page.$x("//*[@id=\"page\"]/section/div/p[2]");
     // console.log(el)
     const txtVeg = await el2.getProperty('textContent');
     // console.log(p)
@@ -26,14 +26,14 @@ async function cookiescrape(url) {
     const veggietxt = textVeg;
 
 
-    fs.writeFile('./cookies/spotify.com.cookie', cookietxt, function (err) {
+    fs.writeFile('./cookies/rockandice.com/.cookie', cookietxt, function (err) {
         if (err) {
             return console.log(err);
         }
         console.log(("Cookie Saved!"))
     });
 
-    fs.writeFile('./veggies/spotify.com.veggie', veggietxt, function (err) {
+    fs.writeFile('./veggies/rockandice.com/.veggie', veggietxt, function (err) {
         if (err) {
             return console.log(err);
         }
@@ -49,4 +49,4 @@ async function cookiescrape(url) {
 }
 
 
-cookiescrape("https://www.spotify.com/za/about-us/contact/");
+cookiescrape("https://rockandice.com/climbing-gear-tips/should-you-be-allowed-to-practice-lead-falls-in-the-gym/");

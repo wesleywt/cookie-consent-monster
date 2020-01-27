@@ -1,0 +1,1 @@
+As you can see, the matrix reduces our data to the mere existence of words in a text. We give up the sequence of words or recurring word patterns that could indicate spam. This maybe a disadvantage when trying to identify spam, but it is easy to compute.
