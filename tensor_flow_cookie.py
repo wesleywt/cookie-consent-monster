@@ -56,7 +56,7 @@ def vectorize(cookie_text_train, cookie_text_test):
     return cookies_vec_train, cookies_vec_test, vectorizer, vocab
 
 
-# print(X_train)
+
 def model_compile(cookies_vect_train_array):
     input_dim = cookie_vec_train_array.shape[1]
 
@@ -108,7 +108,7 @@ if __name__ == '__main__':
 
     cookies_vec_train, cookies_vec_test, vectorizer, vocab = vectorize(cookie_text_train, cookie_text_test)
 
-    vectorizer = CountVectorizer()
+    # vectorizer = CountVectorizer()
     vectorizer.fit(cookie_text_train)
 
     cookies_vec_train = vectorizer.transform(cookie_text_train)
