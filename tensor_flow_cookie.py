@@ -1,13 +1,14 @@
-import requests
+import os
+import pickle
+
+import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split
+import requests
+import tensorflow as tf
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.linear_model import LogisticRegression
-import matplotlib.pyplot as plt
-import tensorflow as tf
-import numpy as np
-import pickle
-import os
+from sklearn.model_selection import train_test_split
 
 
 def get_data():
@@ -58,12 +59,6 @@ def vectorize(cookie_text_train, cookie_text_test):
 # print(X_train)
 def model_compile(cookies_vect_train_array):
     input_dim = cookie_vec_train_array.shape[1]
-
-    checkpoint_path = 'training_1/cp.ckpt'
-    checkpoint_dir = os.path.dirname(checkpoint_path)
-    cp_callback = tf.keras.callbacks.ModelCheckpoint(checkpoint_path,
-                                                     save_weights_only=True,
-                                                     verbose=1)
 
     model = tf.keras.Sequential([
         tf.keras.layers.Dense(10, input_dim=input_dim, activation='relu'),
