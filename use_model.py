@@ -16,7 +16,7 @@ model = tf.keras.models.load_model('saved_model/cookies_model')
 # print(model.summary())
 
 text = [
-    'Privacy Notice: Our site uses cookies for advertising, analytics and to improve our sites and services. By continuing to use our site, you agree to our cookies. For ore information, including how to change your settings, see our ']
+    'I agree my information will be processed in accordance with the Nature and Springer Nature Limited Privacy Policy. ']
 
 vectorizer = pickle.load(open("vector.pickel", "rb"))
 

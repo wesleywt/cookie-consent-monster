@@ -108,58 +108,55 @@ def plot_history(history):
 
 
 if __name__ == '__main__':
-    # cookies = get_data()
-    # cookie_text_train, cookie_labels_train, cookie_text_test, cookie_labels_test = split_data(cookies)
-    #
-    # cookies_vec_train, cookies_vec_test, vectorizer, vocab = vectorize(cookie_text_train, cookie_text_test)
+    cookies = get_data()
+    cookie_text_train, cookie_labels_train, cookie_text_test, cookie_labels_test = split_data(cookies)
 
-    # vectorizer = CountVectorizer()
-    # vectorizer.fit(cookie_text_train)
-    #
-    # cookies_vec_train = vectorizer.transform(cookie_text_train)
-    # cookies_vec_test = vectorizer.transform(cookie_text_test)
+    cookies_vec_train, cookies_vec_test, vectorizer, vocab = vectorize(cookie_text_train, cookie_text_test)
 
-    # cookie_vec_train_array = cookies_vec_train.toarray()
-    # cookies_vec_test_array = cookies_vec_test.toarray()
+    vectorizer = CountVectorizer()
+    vectorizer.fit(cookie_text_train)
 
-    # score = logistic_regression(cookies_vec_train, cookie_labels_train, cookies_vec_test, cookie_labels_test)
-    # print(f'Accuracy for cookies data by Logistic Regression: {score:.4f}')
+    cookies_vec_train = vectorizer.transform(cookie_text_train)
+    cookies_vec_test = vectorizer.transform(cookie_text_test)
+
+    cookie_vec_train_array = cookies_vec_train.toarray()
+    cookies_vec_test_array = cookies_vec_test.toarray()
+
+    score = logistic_regression(cookies_vec_train, cookie_labels_train, cookies_vec_test, cookie_labels_test)
+    print(f'Accuracy for cookies data by Logistic Regression: {score:.4f}')
+
+    model = model_compile(cookie_vec_train_array)
+    print(model.summary())
+    checkpoint_path = 'training_1/cp.ckpt'
+    checkpoint_dir = os.path.dirname(checkpoint_path)
+    cp_callback = tf.keras.callbacks.ModelCheckpoint(checkpoint_path,
+                                                     save_weights_only=True,
+                                                     verbose=1)
+
     #
+    history = model.fit(cookie_vec_train_array, cookie_labels_train, epochs=100, verbose=True,
+                        validation_data=(cookies_vec_test_array, cookie_labels_test), batch_size=10,
+                        callbacks=[cp_callback])
+
+    loss, accuracy = model.evaluate(cookie_vec_train_array, cookie_labels_train, verbose=False)
+    print(f'Training Accuracy: {accuracy}')
     #
-    #
-    #
-    #
-    # model = model_compile(cookie_vec_train_array)
-    # print(model.summary())
-    # checkpoint_path = 'training_1/cp.ckpt'
-    # checkpoint_dir = os.path.dirname(checkpoint_path)
-    # cp_callback = tf.keras.callbacks.ModelCheckpoint(checkpoint_path,
-    #                                                  save_weights_only=True,
-    #                                                  verbose=1)
-    #
-    # #
-    # history = model.fit(cookie_vec_train_array, cookie_labels_train, epochs=100, verbose=True,
-    #                     validation_data=(cookies_vec_test_array, cookie_labels_test), batch_size=10, callbacks=[cp_callback])
-    #
-    # loss, accuracy = model.evaluate(cookie_vec_train_array, cookie_labels_train, verbose=False)
-    # print(f'Training Accuracy: {accuracy}')
-    # #
-    # loss, accuracy = model.evaluate(cookies_vec_test_array, cookie_labels_test, verbose=False)
-    # print(f'Testing Accuracy: {accuracy}')
-    #
-    # plot_history(history)
+    loss, accuracy = model.evaluate(cookies_vec_test_array, cookie_labels_test, verbose=False)
+    print(f'Testing Accuracy: {accuracy}')
+
+    plot_history(history)
 
     cookie_test = input("Give me a cookie: ")
     LABELS = ['a cookie', 'not a cookie']
 
-    # predict_text = vectorizer.transform([cookie_test])
-    # predict_array = predict_text.toarray()
-    # print(predict_array)
-    # prediction = model.predict(predict_array)
-    # print(prediction)
-    # print(np.argmax(prediction))
-    # print(f'The text is {LABELS[np.argmax(prediction)]}')
-    # print(vocab)
+    predict_text = vectorizer.transform([cookie_test])
+    predict_array = predict_text.toarray()
+    print(predict_array)
+    prediction = model.predict(predict_array)
+    print(prediction)
+    print(np.argmax(prediction))
+    print(f'The text is {LABELS[np.argmax(prediction)]}')
+    print(vocab)
 
     # cookie_text = ["We use cookies to understand how you use our site and to improve your experience. "
     #                "This includes personalizing content and advertising. To learn more, "
@@ -183,16 +180,16 @@ if __name__ == '__main__':
 
     # You can load with keras.model.load_model
 
-    new_model = tf.keras.models.load_model('saved_model/cookies_model')  # Can be used in Tensflow.js
-    new_model.summary()
-
-    # loss, acc = new_model.evaluate(cookies_vec_test_array, cookie_labels_test, verbose=2)
-    # print(f'Saved model, accuracy: {100 * acc:5.2f}%')
-    vectorizer = pickle.load(open("vector.pickel", "rb"))
-
-    predict_text = vectorizer.transform([cookie_test])
-    predict_array = predict_text.toarray()
-    prediction = new_model.predict(predict_array)
-    print(prediction)
-    print(np.argmax(prediction))
-    print(f'The text is {LABELS[np.argmax(prediction)]}')
+    # new_model = tf.keras.models.load_model('saved_model/cookies_model')  # Can be used in Tensflow.js
+    # new_model.summary()
+    #
+    # # loss, acc = new_model.evaluate(cookies_vec_test_array, cookie_labels_test, verbose=2)
+    # # print(f'Saved model, accuracy: {100 * acc:5.2f}%')
+    # vectorizer = pickle.load(open("vector.pickel", "rb"))
+    #
+    # predict_text = vectorizer.transform([cookie_test])
+    # predict_array = predict_text.toarray()
+    # prediction = new_model.predict(predict_array)
+    # print(prediction)
+    # print(np.argmax(prediction))
+    # print(f'The text is {LABELS[np.argmax(prediction)]}')
