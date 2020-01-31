@@ -15,6 +15,9 @@ pandas = "*"
 tensorflow = "*"
 pyyaml = "*"
 h5py = "*"
+tensorflow-hub = "*"
+keras = "*"
+tensorflowjs = "*"
 
 [requires]
 python_version = "3.7"

@@ -6,164 +6,84 @@ from sklearn.linear_model import LogisticRegression
 import matplotlib.pyplot as plt
 import tensorflow as tf
 import numpy as np
-
-response = requests.get('https://pure-wildwood-95580.herokuapp.com/api/v1/data')
-
-if response.status_code == 200:
-    data = response.json()
-    print("Got the data")
-else:
-    print("We got nothing")
-
-# The keys of the json file is printed. It shows the keys in the json file.
-# It can also be accessed using data["results"].
-# But I can't get the items from the results then.
-
-# In[2]:
+import pickle
+import os
 
 
-# We can extract the 'is_cookie_notice' and 'inner_text' from the result which are our labels and features respectively.
+def get_data():
+    response = requests.get('https://pure-wildwood-95580.herokuapp.com/api/v1/data')
 
-# In[3]:
+    if response.status_code == 200:
+        data = response.json()
+        print("Got the data")
+    else:
+        print("We got nothing")
 
+    for k, v in data.items():
+        if k == 'results':
+            results = v
 
-for k, v in data.items():
-    if k == 'results':
-        results = v
+    for item in results:
+        df = pd.DataFrame.from_dict(results)
 
-for item in results:
-    df = pd.DataFrame.from_dict(results)
-
-cookies = df[['is_cookie_notice', 'inner_text']]
-
-# We can now change the 'is_cookie_notice' to 0 for True and 1 for False to make the modelling easier.
-# Modelling requires numerical
-# values.
-
-# In[4]:
-
-
-cookies['is_cookie_notice'] = cookies['is_cookie_notice'].map({True: 0, False: 1})
-
-# ## Splitting the data
-# I can split into train and test as well as validation. In the Fuel Efficiency example they do the validation
-# split during the
-# model fitting.
-#
-# In[5]:
+    cookies = df[['is_cookie_notice', 'inner_text']]
+    cookies['is_cookie_notice'] = cookies['is_cookie_notice'].map({True: 0, False: 1})
+    return cookies
 
 
-cookie_text = cookies['inner_text'].values
-cookie_labels = cookies['is_cookie_notice'].values
-# print(cookie_text)
-# print(cookie_labels)
+def split_data(cookies):
+    cookie_text = cookies['inner_text'].values
+    cookie_labels = cookies['is_cookie_notice'].values
 
-cookie_text_train, cookie_text_test, cookie_labels_train, cookie_labels_test = train_test_split(cookie_text,
-                                                                                                cookie_labels,
-                                                                                                test_size=0.25,
-                                                                                                random_state=1000)
-# train, test = train_test_split(cookies, test_size=0.2)
-# train, val = train_test_split(train, test_size=0.2)
-print(len(cookie_text_train), 'train examples')
-# print(len(val), 'validation examples')
-print(len(cookie_text_test), 'testing examples')
+    cookie_text_train, cookie_text_test, cookie_labels_train, cookie_labels_test = train_test_split(cookie_text,
+                                                                                                    cookie_labels,
+                                                                                                    test_size=0.25,
+                                                                                                    random_state=1000)
 
-# ## Formatting the data
-# Lets try CountVectorise
-
-# In[6]:
+    return cookie_text_train, cookie_labels_train, cookie_text_test, cookie_labels_test
 
 
-# from nltk.corpus import names
-# from nltk.stem import WordNetLemmatizer
+def vectorize(cookie_text_train, cookie_text_test):
+    vectorizer = CountVectorizer()
+    vectorizer.fit(cookie_text_train)
 
+    pickle.dump(vectorizer, open("vector.pickel", "wb"))
+    vocab = vectorizer.vocabulary_
+    cookies_vec_train = vectorizer.transform(cookie_text_train)
+    cookies_vec_test = vectorizer.transform(cookie_text_test)
 
-# def letters_only(astr):
-#     return astr.isalpha()
+    return cookies_vec_train, cookies_vec_test, vectorizer, vocab
 
-
-# all_names = set(names.words())
-# lemma = WordNetLemmatizer()
-
-
-# def clean_text(docs):
-#     cleaned_docs = []
-#     for doc in docs:
-#         cleaned_docs.append(' '.join(
-#             [lemma.lemmatize(word.lower()) for word in doc.split() if letters_only(word) and word not in all_names]))
-#     return cleaned_docs
-
-
-# train_cleaning = clean_text(cookie_text_train)
-# test_cleaning = clean_text(cookie_text_test)
-
-
-# vectorizer = CountVectorizer(min_df=0, lowercase=False)
-# vectorizer.fit(train_cleaning)
-# print(vectorizer.vocabulary_)
-
-# print(vectorizer.transform(cleaned_cookies).toarray())
-# cookie_vector_train = vectorizer.transform(cleaned_cookies).toarray()
-
-# print(train.tail())
-vectorizer = CountVectorizer()
-vectorizer.fit(cookie_text_train)
-
-X_train = vectorizer.transform(cookie_text_train)
-X_test = vectorizer.transform(cookie_text_test)
 
 # print(X_train)
+def model_compile(cookies_vect_train_array):
+    input_dim = cookie_vec_train_array.shape[1]
 
-classifier = LogisticRegression()
-classifier.fit(X_train, cookie_labels_train)
-score = classifier.score(X_test, cookie_labels_test)
-print(f'Accuracy for cookies data by Logistic Regression: {score:.4f}')
+    checkpoint_path = 'training_1/cp.ckpt'
+    checkpoint_dir = os.path.dirname(checkpoint_path)
+    cp_callback = tf.keras.callbacks.ModelCheckpoint(checkpoint_path,
+                                                     save_weights_only=True,
+                                                     verbose=1)
 
-# We can load the data into the dataset format
+    model = tf.keras.Sequential([
+        tf.keras.layers.Dense(10, input_dim=input_dim, activation='relu'),
+        tf.keras.layers.Dense(2, activation='softmax')
+    ])
+    model.compile(loss='sparse_categorical_crossentropy',
+                  optimizer='adam',
+                  metrics=['accuracy'])
 
+    model.save('cookie_model.h5')
+    model.save('saved_model/cookies_model')
 
-# In[7]:
-
-
-# In[9]:
-
-
-X_train_array = X_train.toarray()
-X_test_array = X_test.toarray()
-
-input_dim = X_train_array.shape[1]
-print(X_train.shape[1])
-model = tf.keras.Sequential([
-    tf.keras.layers.Dense(10, input_dim=input_dim, activation='relu'),
-    tf.keras.layers.Dense(2, activation='softmax')
-])
-
-model.compile(loss='sparse_categorical_crossentropy',
-              optimizer='adam',
-              metrics=['accuracy'])
-
-print(model.summary())
-
-history = model.fit(X_train_array, cookie_labels_train, epochs=100, verbose=True,
-                    validation_data=(X_test_array, cookie_labels_test), batch_size=10)
-
-# ## Evaluating the model
-#
-
-# In[11]:
+    return model
 
 
-loss, accuracy = model.evaluate(X_train_array, cookie_labels_train, verbose=False)
-print(f'Training Accuracy: {accuracy}')
-
-loss, accuracy = model.evaluate(X_test_array, cookie_labels_test, verbose=False)
-print(f'Testing Accuracy: {accuracy}')
-
-
-# ## Plotting it
-#
-
-# In[12]:
+def logistic_regression(cookies_vec_train, cookie_labels_train, cookies_vec_test, cookie_labels_test):
+    classifier = LogisticRegression()
+    classifier.fit(cookies_vec_train, cookie_labels_train)
+    score = classifier.score(cookies_vec_test, cookie_labels_test)
+    return score
 
 
 def plot_history(history):
@@ -187,52 +107,92 @@ def plot_history(history):
     plt.show()
 
 
-plot_history(history)
+if __name__ == '__main__':
+    # cookies = get_data()
+    # cookie_text_train, cookie_labels_train, cookie_text_test, cookie_labels_test = split_data(cookies)
+    #
+    # cookies_vec_train, cookies_vec_test, vectorizer, vocab = vectorize(cookie_text_train, cookie_text_test)
 
-# ## Prediction
-#
-#
+    # vectorizer = CountVectorizer()
+    # vectorizer.fit(cookie_text_train)
+    #
+    # cookies_vec_train = vectorizer.transform(cookie_text_train)
+    # cookies_vec_test = vectorizer.transform(cookie_text_test)
 
-# In[13]:
+    # cookie_vec_train_array = cookies_vec_train.toarray()
+    # cookies_vec_test_array = cookies_vec_test.toarray()
 
-cookie_text = ["We use cookies to understand how you use our site and to improve your experience. "
-               "This includes personalizing content and advertising. To learn more, "
-               "[url=https://yoursite.com/learnmore]click here[/url]. By continuing to use our site, you accept our "
-               "use of cookies, revised [url=https://yoursite.com/privacy]Privacy Policy[/url] and "
-               "[url=https://yoursite.com/tos]Terms of Use[/url"]
-not_cookie_text = [
-    "his tutorial demonstrates how to generate text using a character-based RNN. We will work with a dataset of"
-    " Shakespeare's writing from Andrej Karpathy's The Unreasonable Effectiveness of Recurrent Neural Networks. Given a "
-    "sequence of characters from this data (), train a model to predict the next character in the sequence (). "
-    "Longer sequences of text can be generated by calling the model repeatedly."]
-LABELS = ['a cookie', 'not a cookie']
-predict_text = vectorizer.transform(cookie_text)
-predict_array = predict_text.toarray()
-prediction = model.predict(predict_array)
-print(prediction)
-print(np.argmax(prediction))
-print(f'The text is {LABELS[np.argmax(prediction)]}')
+    # score = logistic_regression(cookies_vec_train, cookie_labels_train, cookies_vec_test, cookie_labels_test)
+    # print(f'Accuracy for cookies data by Logistic Regression: {score:.4f}')
+    #
+    #
+    #
+    #
+    #
+    # model = model_compile(cookie_vec_train_array)
+    # print(model.summary())
+    # checkpoint_path = 'training_1/cp.ckpt'
+    # checkpoint_dir = os.path.dirname(checkpoint_path)
+    # cp_callback = tf.keras.callbacks.ModelCheckpoint(checkpoint_path,
+    #                                                  save_weights_only=True,
+    #                                                  verbose=1)
+    #
+    # #
+    # history = model.fit(cookie_vec_train_array, cookie_labels_train, epochs=100, verbose=True,
+    #                     validation_data=(cookies_vec_test_array, cookie_labels_test), batch_size=10, callbacks=[cp_callback])
+    #
+    # loss, accuracy = model.evaluate(cookie_vec_train_array, cookie_labels_train, verbose=False)
+    # print(f'Training Accuracy: {accuracy}')
+    # #
+    # loss, accuracy = model.evaluate(cookies_vec_test_array, cookie_labels_test, verbose=False)
+    # print(f'Testing Accuracy: {accuracy}')
+    #
+    # plot_history(history)
 
-# Saving the entire model for tensorflow.js
+    cookie_test = input("Give me a cookie: ")
+    LABELS = ['a cookie', 'not a cookie']
 
-model.save('cookie_model.h5')
-h5_model = tf.keras.models.load_model('cookie_model.h5')
+    # predict_text = vectorizer.transform([cookie_test])
+    # predict_array = predict_text.toarray()
+    # print(predict_array)
+    # prediction = model.predict(predict_array)
+    # print(prediction)
+    # print(np.argmax(prediction))
+    # print(f'The text is {LABELS[np.argmax(prediction)]}')
+    # print(vocab)
 
-# alternatively the model is saved with SavedModel format that can be used in Tensorflow.js
+    # cookie_text = ["We use cookies to understand how you use our site and to improve your experience. "
+    #                "This includes personalizing content and advertising. To learn more, "
+    #                "[url=https://yoursite.com/learnmore]click here[/url]. By continuing to use our site, you accept our "
+    #                "use of cookies, revised [url=https://yoursite.com/privacy]Privacy Policy[/url] and "
+    #                "[url=https://yoursite.com/tos]Terms of Use[/url"]
+    # not_cookie_text = [
+    #     "his tutorial demonstrates how to generate text using a character-based RNN. We will work with a dataset of"
+    #     " Shakespeare's writing from Andrej Karpathy's The Unreasonable Effectiveness of Recurrent Neural Networks. Given a "
+    #     "sequence of characters from this data (), train a model to predict the next character in the sequence (). "
+    #     "Longer sequences of text can be generated by calling the model repeatedly."]
 
-model.save('saved_model/cookies_model')
+    # Saving the entire model for tensorflow.js
+    #
+    # model.save('cookie_model.h5')
+    # h5_model = tf.keras.models.load_model('cookie_model.h5')
+    #
+    # # alternatively the model is saved with SavedModel format that can be used in Tensorflow.js
+    #
+    # model.save('saved_model/cookies_model')
 
-# You can load with keras.model.load_model
+    # You can load with keras.model.load_model
 
-new_model = tf.keras.models.load_model('saved_model/cookies_model')  # Can be used in Tensflow.js
-new_model.summary()
+    new_model = tf.keras.models.load_model('saved_model/cookies_model')  # Can be used in Tensflow.js
+    new_model.summary()
 
-loss, acc = new_model.evaluate(X_test_array, cookie_labels_test, verbose=2)
-print(f'Saved model, accuracy: {100 * acc:5.2f}%')
+    # loss, acc = new_model.evaluate(cookies_vec_test_array, cookie_labels_test, verbose=2)
+    # print(f'Saved model, accuracy: {100 * acc:5.2f}%')
+    vectorizer = pickle.load(open("vector.pickel", "rb"))
 
-predict_text = vectorizer.transform(not_cookie_text)
-predict_array = predict_text.toarray()
-prediction = new_model.predict(predict_array)
-print(prediction)
-print(np.argmax(prediction))
-print(f'The text is {LABELS[np.argmax(prediction)]}')
+    predict_text = vectorizer.transform([cookie_test])
+    predict_array = predict_text.toarray()
+    prediction = new_model.predict(predict_array)
+    print(prediction)
+    print(np.argmax(prediction))
+    print(f'The text is {LABELS[np.argmax(prediction)]}')
