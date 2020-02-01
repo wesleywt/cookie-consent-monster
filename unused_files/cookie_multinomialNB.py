@@ -1,17 +1,17 @@
 import glob
 import os
 
+import numpy as np
 from nltk.corpus import names
 from nltk.stem import WordNetLemmatizer
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.model_selection import train_test_split
 from sklearn.naive_bayes import MultinomialNB
-import numpy as np
 
 cookies, labels = [], []
 
-cookies_path = './cookies'
-veggies_path = './veggies'
+cookies_path = '../cookies'
+veggies_path = '../veggies'
 # Open the files in each folder and append the text to the list cookies and label it
 for filename in glob.glob(os.path.join(cookies_path, '*.cookie')):
     with open(filename, 'r', encoding="ISO-8859-1") as infile:
